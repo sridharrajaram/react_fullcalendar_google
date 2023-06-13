@@ -1,22 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Navbar.css';
+import { getSignedInUserEmail, initClient, signInToGoogle, signOutFromGoogle } from "./GoogleApiService";
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
+  const [userEmail, setUserEmail] = useState(null);
 
-  const handleSignIn = () => {
-    // Code to handle Google sign-in
-    // Once the user is signed in, update the state variables
-    setIsLoggedIn(true);
-    setUserEmail('example@gmail.com'); // Replace with the actual user's email
+  useEffect(() => {
+    initClient((success) => {
+      if (success) {
+        getGoogleAuthorizedEmail();
+      }
+    });
+  }, []);
+
+  const getGoogleAuthorizedEmail = async () => {
+    let email = await getSignedInUserEmail();
+    console.warn("Synced EMAIL", email);
+
+    if (email) {
+      setIsLoggedIn(true);
+      setUserEmail(email.gw);
+    }
   };
-
-  const handleSignOut = () => {
-    // Code to handle sign out
-    // Once the user is signed out, update the state variables
-    setIsLoggedIn(false);
-    setUserEmail('');
+  const getAuthToGoogle = async () => {
+    let successfull = await signInToGoogle();
+    if (successfull) {
+      getGoogleAuthorizedEmail();
+    }
+  };
+  const _signOutFromGoogle = () => {
+    let status = signOutFromGoogle();
+    if (status) {
+      setIsLoggedIn(false);
+      setUserEmail(null);
+    }
   };
 
   return (
@@ -29,10 +47,10 @@ const Navbar = () => {
         {isLoggedIn ? (
           <div>
             <span>{userEmail}</span>
-            <button onClick={handleSignOut}>Sign Out</button>
+            <button onClick={_signOutFromGoogle}>Sign Out</button>
           </div>
         ) : (
-          <button onClick={handleSignIn}>Sign In with Google</button>
+          <button onClick={getAuthToGoogle}>Sign In with Google</button>
         )}
       </div>
     </nav>
